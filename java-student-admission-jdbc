@@ -1,0 +1,125 @@
+package admission_form;
+
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.sql.*;
+import javax.swing.*;
+import net.proteanit.sql.DbUtils;
+
+public class Main {
+
+    public static void main(String[] args) {
+        JFrame f = new JFrame("AdmissionForm");
+        f.setSize(600, 600);
+        f.setLocationRelativeTo(null);
+        f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        f.setResizable(false);
+        f.setLayout(null);
+
+        JLabel l1 = new JLabel("Roll Number");
+        l1.setBounds(170, 100, 80, 30);
+        JTextField t1 = new JTextField();
+        t1.setBounds(300, 100, 150, 30);
+
+        JLabel l2 = new JLabel("Name");
+        l2.setBounds(170, 150, 80, 30);
+        JTextField t2 = new JTextField();
+        t2.setBounds(300, 150, 150, 30);
+
+        JLabel l3 = new JLabel("Age");
+        l3.setBounds(170, 200, 80, 30);
+        JTextField t3 = new JTextField();
+        t3.setBounds(300, 200, 150, 30);
+
+        JLabel l4 = new JLabel("Marks");
+        l4.setBounds(170, 250, 80, 30);
+        JTextField t4 = new JTextField();
+        t4.setBounds(300, 250, 150, 30);
+
+        JButton b = new JButton("SUBMIT");
+        b.setBounds(150, 370, 100, 50);
+
+        JButton b1 = new JButton("SHOW");
+        b1.setBounds(320, 370, 100, 50);
+
+        f.add(l1); f.add(t1);
+        f.add(l2); f.add(t2);
+        f.add(l3); f.add(t3);
+        f.add(l4); f.add(t4);
+        f.add(b);
+        f.add(b1);
+
+        b.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent ae) {
+                // Validate & parse INSIDE the try block, so bad input is caught cleanly
+                try {
+                    int roll_no = Integer.parseInt(t1.getText().trim());
+                    String name = t2.getText().trim();
+                    int age = Integer.parseInt(t3.getText().trim());
+                    int marks = Integer.parseInt(t4.getText().trim());
+
+                    if (name.isEmpty()) {
+                        JOptionPane.showMessageDialog(f, "Name cannot be empty!");
+                        return;
+                    }
+
+                    Class.forName("com.mysql.cj.jdbc.Driver");
+                    Connection con = DriverManager.getConnection(
+                            "jdbc:mysql://localhost:3306/students", "root", "root123");
+
+                    String insertQuery = "INSERT INTO Student(Roll_No, Name, Age, Marks) VALUES (?,?,?,?)";
+                    PreparedStatement pst = con.prepareStatement(insertQuery);
+                    pst.setInt(1, roll_no);
+                    pst.setString(2, name);
+                    pst.setInt(3, age);
+                    pst.setInt(4, marks);
+                    pst.executeUpdate();
+
+                    JOptionPane.showMessageDialog(f, "Record Inserted Successfully!");
+
+                    t1.setText("");
+                    t2.setText("");
+                    t3.setText("");
+                    t4.setText("");
+
+                    pst.close();
+                    con.close();
+
+                } catch (NumberFormatException nfe) {
+                    JOptionPane.showMessageDialog(f,
+                            "Roll Number, Age, and Marks must be numeric!",
+                            "Invalid Input", JOptionPane.ERROR_MESSAGE);
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(f, "Error: " + ex.getMessage());
+                }
+            }
+        });
+
+        b1.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent ae) {
+                try {
+                    Class.forName("com.mysql.cj.jdbc.Driver");
+                    Connection con = DriverManager.getConnection(
+                            "jdbc:mysql://localhost:3306/students", "root", "root123");
+
+                    Statement st = con.createStatement();
+                    ResultSet rs = st.executeQuery("SELECT * FROM student");
+
+                    JTable table = new JTable(DbUtils.resultSetToTableModel(rs));
+                    JOptionPane.showMessageDialog(f, new JScrollPane(table));
+
+                    rs.close();
+                    st.close();
+                    con.close();
+
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(f, "Error: " + ex.getMessage());
+                }
+            }
+        });
+
+        f.setVisible(true);
+    }
+}
